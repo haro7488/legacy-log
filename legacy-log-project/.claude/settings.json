@@ -1,0 +1,5 @@
+{
+  "claudeMdExcludes": [
+    "**/legacy-log/CLAUDE.md"
+  ]
+}
