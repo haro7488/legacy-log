@@ -1,2 +1,7 @@
 # Normalize EOL for all files that Git considers text files.
 * text=auto eol=lf
+
+# Windows batch files require CRLF line endings, otherwise cmd.exe
+# misparses them and emits "X is not recognized as an internal command".
+*.cmd text eol=crlf
+*.bat text eol=crlf

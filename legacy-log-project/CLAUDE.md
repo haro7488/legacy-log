@@ -22,20 +22,29 @@ Godot 4.6.2 + C# (.NET 8) 게임 프로젝트.
 
 **임포트 (에셋 스캔 / `.godot/` 갱신)**
 ```bash
-./scripts/godot.sh --headless --import
+./scripts/godot.sh --headless --import      # Git Bash
+.\scripts\godot.cmd --headless --import     # cmd / PowerShell
 ```
 
-**C# 빌드**
-```bash
+**C# 빌드** (셸 무관)
+```
 dotnet build
 ```
 
-**둘 다** 새 코드/씬 추가 후 한 번씩 실행하면 IDE 없이도 컴파일 가능 상태가 유지된다.
+새 스크립트/씬 추가 후 위 두 단계를 한 번씩 돌리면 IDE 없이도 컴파일 가능 상태가 유지된다.
+
+## Godot 에디터 실행
+
+```bash
+./scripts/godot.sh -e        # Git Bash
+.\scripts\godot.cmd -e       # cmd / PowerShell
+```
 
 ## Godot 호출 규칙
 
-- Godot은 반드시 `scripts/godot.sh` 래퍼를 통해 실행한다. `winget` 설치 시 PATH에 등록되는 `WinGet/Links/godot.exe` 심볼릭 링크로 직접 실행하면 Godot이 `GodotSharp/` 디렉터리를 링크 위치 기준으로 찾아 .NET 어셈블리 로드에 실패한다(헤드리스에서도 GUI 다이얼로그가 뜸).
-- 래퍼는 `GODOT_BIN` 환경 변수가 있으면 그것을 우선 사용하고, 없으면 표준 winget Mono 설치 경로를 자동 탐색한다. CI 등에서는 `GODOT_BIN`을 명시적으로 지정한다.
+- Godot은 반드시 `scripts/godot.sh`(POSIX 셸) 또는 `scripts/godot.cmd`(Windows 셸) 래퍼를 통해 실행한다. `winget` 설치 시 PATH에 등록되는 `WinGet/Links/godot.exe` 심볼릭 링크로 직접 실행하면 Godot이 `GodotSharp/` 디렉터리를 링크 위치 기준으로 찾아 .NET 어셈블리 로드에 실패한다(헤드리스에서도 GUI 다이얼로그가 뜸).
+- 두 래퍼 모두 `GODOT_BIN` 환경 변수가 있으면 그것을 우선 사용하고, 없으면 표준 winget Mono 설치 경로를 자동 탐색한다. CI 등에서는 `GODOT_BIN`을 명시적으로 지정한다.
+- `*.cmd`/`*.bat`은 CRLF가 강제(`.gitattributes`)된다. LF로 저장되면 cmd가 라인을 잘못 파싱한다.
 
 ## 컨벤션
 
