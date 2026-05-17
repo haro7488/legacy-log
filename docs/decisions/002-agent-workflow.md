@@ -5,15 +5,15 @@
 
 ## 맥락
 
-LegacyLog는 게임 완성뿐 아니라 Codex/Claude 기반 원격 Godot 개발 워크플로우를 검증하는 실험이다. 루트 문서 계층과 하위 Godot 구현 프로젝트를 분리했으므로, 요구사항이 구현으로 넘어가는 절차도 명시해야 한다.
+LegacyLog는 루트 문서 계층과 하위 Godot 구현 프로젝트를 분리해 운영한다. 루트에서 정리한 제품 요구사항이 하위 구현으로 넘어가는 절차를 명시해야 한다.
 
-이번 결정은 루트 Codex가 PRD와 전체 방향성을 정하고, 하위 프로젝트의 Codex와 Claude가 아키텍처 설계, 구현 계획, 검토, 구현을 나누어 수행하는 방식을 기본 작업 흐름으로 삼기 위한 것이다.
+이번 결정은 Root Codex가 프로젝트 총괄과 PRD 작성을 담당하고, 하위 프로젝트의 Codex와 Claude가 아키텍처 설계, 구현 계획, 검토, 구현을 나누어 수행하는 방식을 기본 작업 흐름으로 삼기 위한 것이다.
 
 ## 결정
 
 기본 작업 흐름은 다음 순서를 따른다.
 
-1. **Root Codex**가 PRD 작성, 제품 방향성, 현재 작업 초점을 정리한다.
+1. **Root Codex**가 프로젝트 총괄자로서 PRD 작성, 제품 방향성, 현재 작업 초점을 정리한다.
 2. **Root Codex**가 하위 프로젝트로 넘길 제품 요구, 범위, 제약, 완료 기준을 정리한다.
 3. **Project Codex**가 받은 작업 지시를 기준으로 아키텍처 및 구현 계획을 작성한다.
 4. **Project Claude**가 Project Codex의 구현 계획을 검토하고 개선점을 제안한다.
@@ -24,7 +24,7 @@ LegacyLog는 게임 완성뿐 아니라 Codex/Claude 기반 원격 Godot 개발 
 
 | 역할 | 위치 | 책임 | 산출물 |
 |---|---|---|---|
-| Root Codex | 저장소 루트 | PRD, 전체 방향성, 작업 초점, 제품 요구와 제약 정리 | `docs/product/prd.md`, `docs/current-focus.md`, 결정 문서 |
+| Root Codex | 저장소 루트 | 프로젝트 총괄, PRD 작성, 제품 방향성, 작업 초점, 제품 요구와 제약 정리 | `docs/product/prd.md`, `docs/current-focus.md`, 결정 문서 |
 | Project Codex | `legacy-log-project/` | 아키텍처 및 구현 계획 작성, 리뷰 반영, 최종 작업 지시서 작성 | 구현 계획, 최종 작업 지시서 |
 | Project Claude | `legacy-log-project/` | 구현 계획 검토, 개선점 제안, 최종 지시서 기반 구현 | 리뷰 결과, 코드 변경, 검증 결과 |
 
