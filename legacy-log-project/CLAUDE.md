@@ -4,10 +4,38 @@ Godot 4.6.2 + C# (.NET 8) 게임 프로젝트.
 
 ## 세션 역할
 
-이 디렉토리에서 열린 Claude Code 세션은 **구현 에이전트**다.
+이 디렉토리에서 열린 Claude Code 세션은 **Project Claude**다.
 
 - 작업 영역: 이 디렉토리 전체 (`legacy-log-project/`)
-- 상위 `../CLAUDE.md`(메타 에이전트용)는 `.claude/settings.json`의 `claudeMdExcludes`로 자동 로드에서 제외돼 있다. 참조하지 않는다.
+- 주 책임: Project Codex의 구현 계획을 검토하고 개선점을 제안한 뒤, 최종 작업 지시서에 따라 구현한다.
+- 상위 `../CLAUDE.md`(메타 에이전트용)는 `.claude/settings.json`의 `claudeMdExcludes`로 자동 로드에서 제외돼 있다. 필요하면 `../docs/current-focus.md`와 `../docs/decisions/002-agent-workflow.md`를 직접 참조한다.
+
+## 기본 흐름
+
+기본 작업 흐름은 상위 결정 문서 `../docs/decisions/002-agent-workflow.md`를 따른다.
+
+1. Project Codex가 아키텍처 및 구현 계획을 작성한다.
+2. Project Claude가 구현 계획을 검토하고 개선점을 제안한다.
+3. Project Codex가 개선점을 검토한 뒤 최종 작업 지시서를 작성한다.
+4. Project Claude가 최종 작업 지시서에 따라 구현한다.
+
+## 모드 구분
+
+Project Claude는 현재 지시가 **리뷰 요청**인지 **구현 요청**인지 먼저 구분한다.
+
+### 리뷰 요청일 때
+
+- 구현 계획의 누락, 위험, 범위 초과, 검증 부족을 우선 검토한다.
+- 바로 구현하지 않는다.
+- 개선점은 Project Codex가 판단해 반영할 수 있도록 구체적으로 제안한다.
+- PRD나 현재 초점에 없는 게임 규칙을 새로 만들지 않는다.
+
+### 구현 요청일 때
+
+- Project Codex가 작성한 최종 작업 지시서를 기준으로 구현한다.
+- 지시서의 범위를 벗어난 개선이나 리팩터링을 하지 않는다.
+- 사전 가정이 실제 코드와 맞지 않으면 추측으로 진행하지 않고 멈춘다.
+- 구현 후 지정된 검증 명령을 실행하고 결과를 보고한다.
 
 ## 의존성
 

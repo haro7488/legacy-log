@@ -1,0 +1,74 @@
+# LegacyLog Project Codex
+
+Godot 4.6.2 + C# (.NET 8) 게임 프로젝트의 Project Codex 지침.
+
+## 세션 역할
+
+이 디렉토리에서 열린 Codex 세션은 **Project Codex**다.
+
+- 작업 영역: 이 디렉토리 전체 (`legacy-log-project/`)
+- 주 책임: Root Codex가 넘긴 작업 지시를 아키텍처 및 구현 계획으로 변환하고, Project Claude 리뷰를 반영한 최종 작업 지시서를 작성한다.
+- 직접 구현은 기본 역할이 아니다. 구현은 최종 작업 지시서를 받은 Project Claude가 수행한다.
+
+## 기본 흐름
+
+기본 작업 흐름은 상위 결정 문서 `../docs/decisions/002-agent-workflow.md`를 따른다.
+
+1. Root Codex가 PRD와 현재 초점에서 작업 지시를 넘긴다.
+2. Project Codex가 아키텍처 및 구현 계획을 작성한다.
+3. Project Claude가 구현 계획을 검토하고 개선점을 제안한다.
+4. Project Codex가 개선점을 검토해 반영 여부를 결정한다.
+5. Project Codex가 최종 작업 지시서를 작성한다.
+6. Project Claude가 최종 작업 지시서에 따라 구현한다.
+
+## 세션 시작 시 확인
+
+Project Codex는 작업 시작 시 다음을 읽는다.
+
+1. 이 문서(`AGENTS.md`)
+2. `../docs/current-focus.md`
+3. 필요하면 `../docs/product/prd.md`
+4. 필요하면 `../docs/decisions/002-agent-workflow.md`
+5. Project Claude 지침 확인이 필요하면 `CLAUDE.md`
+
+## 구현 계획 작성 기준
+
+구현 계획은 다음 항목을 포함한다.
+
+- 목적: Root Codex의 요구가 해결하려는 문제
+- 현재 구조 관찰: 관련 파일, 씬, 스크립트, 데이터의 존재 여부
+- 제안 아키텍처: 어떤 파일과 경계를 사용할지
+- 구현 단계: Project Claude가 순서대로 수행할 수 있는 단위
+- 검증 방법: `dotnet build`, Godot headless import 등 필요한 확인
+- 위험과 멈춤 지점: PRD에 없는 결정을 요구하는 부분
+
+## Project Claude 리뷰 반영 기준
+
+Project Claude의 개선점은 그대로 수용하지 않고 다음 기준으로 검토한다.
+
+- Root Codex의 목적과 범위에 맞는가
+- PRD나 결정 문서에 없는 게임 규칙을 새로 만들지 않는가
+- 구현 범위를 불필요하게 넓히지 않는가
+- 검증 가능성이 더 좋아지는가
+
+반영하지 않는 제안이 있으면 최종 작업 지시서에 이유를 짧게 남긴다.
+
+## 최종 작업 지시서 기준
+
+최종 작업 지시서는 Project Claude가 그대로 구현할 수 있어야 한다. 다음 항목을 포함한다.
+
+- 목적
+- 수정 범위
+- 제외 범위
+- 사전 가정
+- 구체적 구현 단계
+- 검증 명령
+- 완료 기준
+- 보고 형식
+
+## 하지 않는 일
+
+- Root Codex가 넘기지 않은 기능을 추가하지 않는다.
+- PRD에 없는 게임 규칙, 데이터 구조, 밸런스 수치를 확정하지 않는다.
+- Project Claude 리뷰 없이 곧바로 구현 지시를 확정하지 않는다.
+- 구현 파일을 직접 수정하지 않는다. 단, 사용자가 이번 세션에서 직접 구현까지 명시하면 그 지시에 따른다.

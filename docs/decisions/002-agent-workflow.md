@@ -1,0 +1,72 @@
+# 002. 멀티 에이전트 작업 흐름
+
+## 상태
+확정 (2026-05-18)
+
+## 맥락
+
+LegacyLog는 게임 완성뿐 아니라 Codex/Claude 기반 원격 Godot 개발 워크플로우를 검증하는 실험이다. 루트 문서 계층과 하위 Godot 구현 프로젝트를 분리했으므로, 요구사항이 구현으로 넘어가는 절차도 명시해야 한다.
+
+이번 결정은 루트 Codex가 PRD와 전체 방향성을 정하고, 하위 프로젝트의 Codex와 Claude가 계획, 검토, 구현을 나누어 수행하는 방식을 기본 작업 흐름으로 삼기 위한 것이다.
+
+## 결정
+
+기본 작업 흐름은 다음 순서를 따른다.
+
+1. **Root Codex**가 PRD 작성, 제품 방향성, 현재 작업 초점을 정리한다.
+2. **Root Codex**가 하위 프로젝트로 넘길 작업 지시를 작성한다.
+3. **Project Codex**가 받은 작업 지시를 기준으로 아키텍처 및 구현 계획을 작성한다.
+4. **Project Claude**가 Project Codex의 구현 계획을 검토하고 개선점을 제안한다.
+5. **Project Codex**가 개선점을 검토한 뒤 반영된 최종 작업 지시서를 작성한다.
+6. **Project Claude**가 최종 작업 지시서에 따라 구현을 진행한다.
+
+## 역할 분담
+
+| 역할 | 위치 | 책임 | 산출물 |
+|---|---|---|---|
+| Root Codex | 저장소 루트 | PRD, 전체 방향성, 작업 초점, 위임 지시 정리 | `docs/product/prd.md`, `docs/current-focus.md`, 결정 문서 |
+| Project Codex | `legacy-log-project/` | 아키텍처 및 구현 계획 작성, 리뷰 반영, 최종 작업 지시서 작성 | 구현 계획, 최종 작업 지시서 |
+| Project Claude | `legacy-log-project/` | 구현 계획 검토, 개선점 제안, 최종 지시서 기반 구현 | 리뷰 결과, 코드 변경, 검증 결과 |
+
+## 작업 지시서 기준
+
+Root Codex 또는 Project Codex가 작성하는 작업 지시서는 다음 항목을 포함해야 한다.
+
+- 목적: 왜 이 작업을 하는지
+- 범위: 수정하거나 검토할 영역
+- 제외 범위: 하지 말아야 할 일
+- 사전 가정: 어긋나면 멈춰야 하는 조건
+- 구체적 행동: 수행할 단계
+- 완료 기준: 검증 가능한 종료 조건
+- 보고 형식: 결과를 어떻게 돌려줄지
+
+## 멈춤 지점
+
+다음 상황에서는 추측으로 진행하지 않고 사용자 확인을 받는다.
+
+- PRD에 없는 게임 규칙, 데이터 구조, 밸런스 수치를 새로 정해야 할 때
+- 하위 프로젝트에서 구현 파일 외의 규칙 문서를 바꿔야 할 때
+- 되돌리기 비용이 큰 작업을 앞두었을 때
+- Project Claude의 리뷰가 Project Codex의 계획과 충돌하고, 어느 쪽을 따를지 판단이 필요한 때
+
+## 적용 범위
+
+- 루트 문서 작업은 `AGENTS.md`, `CLAUDE.md`, `docs/`를 중심으로 한다.
+- Project Codex 지침은 `legacy-log-project/AGENTS.md`에 둔다.
+- Project Claude 지침은 `legacy-log-project/CLAUDE.md`에 둔다.
+- 게임 구현 세부 규칙은 하위 프로젝트 문서에만 둔다.
+
+## 근거
+
+이 흐름은 PRD와 구현을 바로 연결하지 않고, 계획과 리뷰 단계를 분리한다. 따라서 루트 Codex는 제품 방향성을 유지하고, Project Codex는 구현 가능성을 구조화하며, Project Claude는 실제 코드 변경 전에 계획의 누락과 위험을 검토할 수 있다.
+
+또한 최종 구현은 리뷰가 반영된 작업 지시서를 기준으로 하므로, 하위 구현 세션이 즉흥적으로 범위를 넓히는 일을 줄인다.
+
+## 관련
+
+- 루트 `AGENTS.md`
+- 루트 `CLAUDE.md`
+- `docs/product/prd.md`
+- `docs/current-focus.md`
+- `legacy-log-project/AGENTS.md`
+- `legacy-log-project/CLAUDE.md`
