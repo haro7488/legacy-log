@@ -76,6 +76,7 @@ legacy-log/                        ← Git 루트 = Obsidian Vault 루트
 
 **읽을 수는 있으나 수정은 금지되는 영역:**
 - `legacy-log-project/` 내부 전체 — 구현 에이전트의 관할
+- 루트 `CLAUDE.md`의 `## Root Claude의 역할: 감사자` 섹션 — Root Claude의 관할. Root Codex는 이 섹션을 읽지도, 인용하지도, 수정하지도 않는다. 우연히 시야에 들어와도 그 내용을 다른 문서로 옮기거나 자기 활동에 반영하지 않는다.
 
 **예외:** 실험 관찰을 위해 `legacy-log-project/` 내부 파일의 *존재 여부*나 *Git 히스토리*를 조회하는 것은 허용된다. 멀티 에이전트 작업 흐름 문서 정합성을 맞출 때는 `legacy-log-project/AGENTS.md`와 `legacy-log-project/CLAUDE.md`만 수정할 수 있다. 구현 파일 편집은 금지된다.
 
@@ -222,3 +223,4 @@ Codex에게 작업을 위임할 때, 지시문은 다음 다섯 가지를 포함
 - **2026-04-11**: "참고 규칙" 섹션 추가. 커밋 메시지 관례 (`001-commit-convention.md`) 참조 연결.
 - **2026-05-17**: 루트 폴더의 PRD 작성·관리 역할과 `docs/product/prd.md` 구조 추가.
 - **2026-05-18**: Root Codex, Project Codex, Project Claude로 이어지는 기본 작업 흐름 추가.
+- **2026-05-18**: 루트 `CLAUDE.md` 내 Root Claude 전용 섹션에 대한 수정·인용 금지 제약 명시.
