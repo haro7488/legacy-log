@@ -43,3 +43,7 @@ MVP의 첫 플레이 루프는 **사건 선택 중심**으로 한다.
 
 - `docs/product/prd.md`
 - `docs/current-focus.md`
+
+## 후속 결정에 따른 범위 재정의
+
+`docs/decisions/007-multigen-game-identity.md`에 따라, 이 문서의 단일 세대 첫 루프 결정은 MVP 전체 범위가 아니라 다세대 MVP를 구성하는 단일 세대 모듈의 결정으로 유지한다.

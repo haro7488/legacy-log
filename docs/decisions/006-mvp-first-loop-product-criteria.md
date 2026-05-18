@@ -64,3 +64,7 @@ MVP에서 의미 있는 선택은 다음 조건을 만족해야 한다.
 - `docs/decisions/003-mvp-first-loop.md`
 - `docs/decisions/004-mvp-starting-premise.md`
 - `docs/decisions/005-mvp-event-result-feedback.md`
+
+## 후속 결정에 따른 범위 재정의
+
+`docs/decisions/007-multigen-game-identity.md`에 따라, 이 문서의 첫 루프 제품 기준은 MVP 전체 완료 기준이 아니라 다세대 MVP를 구성하는 단일 세대 모듈의 제품 기준으로 유지한다.
