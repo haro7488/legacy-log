@@ -1,6 +1,13 @@
 // MVP First Loop 모델 정의.
-// 본 타입들은 docs/mvp-first-loop-final-work-instruction.md의 합류 계약에 따른다.
-// 콘텐츠와 분리되어 있다(시드 데이터는 MvpLoopContent.cs).
+//
+// 합류 계약(2026-05-18, multigen-mvp 흐름):
+// - RunState는 한 세대 사건 진행 상태로 책임을 좁힌다.
+//   가문명/현재 인물명/도입 문장/가문 단위 상태(Stats)는
+//   FamilyRunState(MultigenModels.cs)가 진실 출처로 보관한다.
+// - EventChoice에는 OutcomeTag(string)을 둔다. 결정 008의 "큰 사건 결과"를
+//   후계/세대 전환 입력으로 넘기는 최소 표식이며 값은 자리표시자다.
+// - RunState.ApplyChoice는 가문 단위 상태 Dictionary를 인자로 받아 갱신한다.
+//   이렇게 두면 RunState 자체는 가문 단위 상태를 보관하지 않는다.
 
 using System.Collections.Generic;
 
@@ -34,13 +41,20 @@ public sealed class EventChoice
     public string ResultText { get; }
     public string ChronicleText { get; }
     public IReadOnlyList<StateDelta> Deltas { get; }
+    public string OutcomeTag { get; }
 
-    public EventChoice(string label, string resultText, string chronicleText, IReadOnlyList<StateDelta> deltas)
+    public EventChoice(
+        string label,
+        string resultText,
+        string chronicleText,
+        IReadOnlyList<StateDelta> deltas,
+        string outcomeTag)
     {
         Label = label;
         ResultText = resultText;
         ChronicleText = chronicleText;
         Deltas = deltas;
+        OutcomeTag = outcomeTag;
     }
 }
 
@@ -74,38 +88,26 @@ public sealed class ChronicleEntry
 
 public sealed class RunState
 {
-    public string FamilyName { get; }
-    public string FounderName { get; }
-    public string IntroLine { get; }
     public int CurrentEventIndex { get; private set; }
-    public Dictionary<string, int> Stats { get; }
     public List<ChronicleEntry> Chronicle { get; }
 
-    public RunState(
-        string familyName,
-        string founderName,
-        string introLine,
-        Dictionary<string, int> stats)
+    public RunState()
     {
-        FamilyName = familyName;
-        FounderName = founderName;
-        IntroLine = introLine;
         CurrentEventIndex = 0;
-        Stats = stats;
         Chronicle = new List<ChronicleEntry>();
     }
 
-    public void ApplyChoice(LoopEvent currentEvent, EventChoice choice)
+    public void ApplyChoice(LoopEvent currentEvent, EventChoice choice, Dictionary<string, int> familyStats)
     {
         foreach (var delta in choice.Deltas)
         {
-            if (Stats.ContainsKey(delta.Key))
+            if (familyStats.ContainsKey(delta.Key))
             {
-                Stats[delta.Key] += delta.Amount;
+                familyStats[delta.Key] += delta.Amount;
             }
             else
             {
-                Stats[delta.Key] = delta.Amount;
+                familyStats[delta.Key] = delta.Amount;
             }
         }
 

@@ -1,13 +1,22 @@
 // MVP First Loop 시드 콘텐츠.
 //
-// 이 파일에 등장하는 상태 키, 상태 표시명, 가문명, 인물명, 도입 문장,
-// 사건 제목/본문, 선택지 문구, 결과 문구, 연대기 문장, 수치 변화는
-// 모두 MVP 검증용 임시 값이다. 최종 콘텐츠나 밸런스로 확정하지 않는다.
+// 이 파일에 등장하는 상태 키, 상태 표시명, 사건 제목/본문, 선택지 문구,
+// 결과 문구, 연대기 문장, OutcomeTag, 수치 변화는 모두 MVP 검증용 임시 값이다.
+// 최종 콘텐츠나 밸런스로 확정하지 않는다.
+//
+// 가문명/초대 인물명/도입 문장은 임시값 위생 작업(2026-05-18, multigen-mvp 흐름)으로
+// FamilyRunState/MultigenContent로 분리·자리표시자화되었다. 사건 문안 전체는
+// 이번 범위 밖이므로 유지한다.
+//
+// OutcomeTag는 결정 008의 "큰 사건 결과"를 후계/세대 전환 입력으로 넘기는 최소 표식이다.
+// 값은 outcome-1, outcome-2 같은 자리표시자이며 최종 사건 분류나 세계관 톤이 아니다.
 //
 // 참고:
 // - docs/decisions/004-mvp-starting-premise.md (이름과 문안 의도적 미확정)
 // - docs/decisions/005-mvp-event-result-feedback.md (서사 + 연대기 + 최소 상태 변화)
 // - docs/decisions/006-mvp-first-loop-product-criteria.md (사건 3개, 선택지 2개 이상)
+// - docs/decisions/008-multigen-mvp-scope.md (큰 사건 결과 OutcomeTag 자리)
+// - docs/temp-value-hygiene-delegation-draft.md (임시값 위생 작업 위임 초안)
 
 using System.Collections.Generic;
 
@@ -40,7 +49,8 @@ public static class MvpLoopContent
                     {
                         new StateDelta(StateKeyReputation, +2),
                         new StateDelta(StateKeyStores, -1),
-                    }),
+                    },
+                    outcomeTag: "outcome-1"),
                 new EventChoice(
                     label: "겨울이 길다며 청을 거절한다.",
                     resultText: "사절은 굳은 얼굴로 돌아갔다. 곳간은 지켰으나 이웃의 시선이 차가워졌다.",
@@ -49,7 +59,8 @@ public static class MvpLoopContent
                     {
                         new StateDelta(StateKeyReputation, -1),
                         new StateDelta(StateKeyStores, +1),
-                    }),
+                    },
+                    outcomeTag: "outcome-2"),
             }),
         new LoopEvent(
             title: "마을의 다툼",
@@ -64,7 +75,8 @@ public static class MvpLoopContent
                     {
                         new StateDelta(StateKeyCohesion, +2),
                         new StateDelta(StateKeyReputation, +1),
-                    }),
+                    },
+                    outcomeTag: "outcome-1"),
                 new EventChoice(
                     label: "한쪽 편을 들어 빠르게 매듭짓는다.",
                     resultText: "다툼은 빨리 끝났지만, 패한 가신의 사람들은 등을 돌렸다.",
@@ -73,7 +85,8 @@ public static class MvpLoopContent
                     {
                         new StateDelta(StateKeyCohesion, -2),
                         new StateDelta(StateKeyStores, +1),
-                    }),
+                    },
+                    outcomeTag: "outcome-2"),
             }),
         new LoopEvent(
             title: "첫 추수의 밤",
@@ -88,7 +101,8 @@ public static class MvpLoopContent
                     {
                         new StateDelta(StateKeyCohesion, +2),
                         new StateDelta(StateKeyStores, -2),
-                    }),
+                    },
+                    outcomeTag: "outcome-1"),
                 new EventChoice(
                     label: "곳간을 채우고 잔치는 미룬다.",
                     resultText: "곳간은 든든해졌지만, 가신들의 인사는 짧고 무거웠다.",
@@ -97,24 +111,21 @@ public static class MvpLoopContent
                     {
                         new StateDelta(StateKeyCohesion, -1),
                         new StateDelta(StateKeyStores, +2),
-                    }),
+                    },
+                    outcomeTag: "outcome-2"),
             }),
     };
 
-    public static RunState CreateInitialRunState()
+    // 가문 단위 초기 상태 Dictionary 시드.
+    // FamilyRunState.FamilyStats가 진실 출처이므로 가문 생성 시 한 번만 호출된다.
+    public static Dictionary<string, int> CreateInitialFamilyStats()
     {
-        var stats = new Dictionary<string, int>
+        return new Dictionary<string, int>
         {
             { StateKeyReputation, 0 },
             { StateKeyStores, 0 },
             { StateKeyCohesion, 0 },
         };
-
-        return new RunState(
-            familyName: "하서가",
-            founderName: "하서 단",
-            introLine: "하서가의 단이 처음으로 가문의 첫 장을 연다.",
-            stats: stats);
     }
 
     public static string GetStateLabel(string key)
