@@ -2,11 +2,26 @@
 // 코드 기반 동적 UI 생성으로 시작/사건/결과/세대 요약/후계 선택/멸문 흐름을
 // 단일 Control 위에 구성한다. Scenes/Main.tscn은 루트 Control + 본 스크립트만 어태치한다.
 //
+// 합류 계약(2026-05-19, multigen-ui-ux-improvement):
+// - UI 영역은 ContextHeader / MainScroll(MainContent) / InfoTabs / ActionBar 4영역.
+//   루트 Control만 FullRect를 잡고, 내부 컨테이너는 부모 컨테이너 레이아웃을 따른다.
+// - InfoTabs는 3개 탭(상태/연대기/가문사). 유산 정보는 가문사 탭에 흡수한다.
+// - 탭 갱신은 RenderInfoTabs() 단일 진입점, ActionBar 갱신은 SetActionBar() 단일 진입점.
+// - 화면 전환은 RefreshContextHeader → ClearMainContent → 본문 구성 → SetActionBar
+//   → RenderInfoTabs → ResetMainScroll 흐름을 명확히 호출한다.
+// - 상태 상세 숫자/방향은 상태 탭 안 토글로 유지하며, 토글 상태는 화면 전환과 무관하게 보존한다.
+// - 사건 화면 선택지는 ActionBar에 둔다(현재 MVP는 2개).
+// - 멸문 화면 ActionBar에는 진행 버튼을 두지 않고 비활성 종료 안내 라벨만 둔다.
+// - 탭 사용자 선택은 화면 전환 시 유지한다(InfoTabs.CurrentTab을 강제하지 않는다).
+// - History.Add는 AfterSummary 시점에서만 일어나며, 세대 요약 화면 시점의
+//   가문사 탭은 아직 현재 세대를 History에 포함하지 않는다.
+//
 // 합류 계약(2026-05-18, multigen-mvp 흐름):
 // - MultigenFlow의 public 진입점만 호출한다(흐름 계산).
 // - MultigenContent의 자리표시자 시드 함수만 호출한다(콘텐츠 문장).
 // - 기본 상태 표시는 4단계 질적 라벨, 토글을 통해 상세 숫자/방향을 본다.
 // - --smoke는 한 실행에서 후계 정상 경로(1세대 → 2세대) + 멸문 경로(2세대 종료)를 모두 검증한다.
+// - --smoke는 UI 노드를 만들지 않는 기능 검증용 경로다. UI 회귀는 수동 GUI 검증으로 확인한다.
 
 using Godot;
 using System.Collections.Generic;
@@ -14,12 +29,24 @@ using System.Collections.Generic;
 public partial class Main : Control
 {
     private FamilyRunState _family = null!;
-    private VBoxContainer _content = null!;
-    private VBoxContainer _statsPanel = null!;
-    private Label _headerLabel = null!;
-    private Button _detailToggleButton = null!;
-    private VBoxContainer _detailPanel = null!;
-    private bool _detailVisible;
+
+    // 4영역 노드.
+    private VBoxContainer _contextHeader = null!;
+    private Label _contextHeaderLine1 = null!;
+    private Label _contextHeaderLine2 = null!;
+    private ScrollContainer _mainScroll = null!;
+    private VBoxContainer _mainContent = null!;
+    private TabContainer _infoTabs = null!;
+    private VBoxContainer _stateTabContent = null!;
+    private VBoxContainer _chronicleTabContent = null!;
+    private VBoxContainer _familyHistoryTabContent = null!;
+    private VBoxContainer _actionBar = null!;
+
+    // 상태 탭 상세 토글 상태(화면 전환 후에도 유지).
+    private bool _stateDetailVisible;
+
+    // 세대 요약 → AfterSummary 사이에 잠시 보관.
+    private GenerationEndResult _pendingEnd = null!;
 
     public override void _Ready()
     {
@@ -56,120 +83,358 @@ public partial class Main : Control
         return false;
     }
 
+    // -------------------------------------------------------------------------
+    // UI shell 빌더 (영역별 분리)
+    // -------------------------------------------------------------------------
+
     private void BuildShell()
     {
+        // 루트 Control만 FullRect.
         SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
 
-        var root = new VBoxContainer();
-        root.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
-        AddChild(root);
+        // 작은 화면 안전 여백.
+        var margin = new MarginContainer();
+        margin.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
+        margin.AddThemeConstantOverride("margin_left", 12);
+        margin.AddThemeConstantOverride("margin_right", 12);
+        margin.AddThemeConstantOverride("margin_top", 12);
+        margin.AddThemeConstantOverride("margin_bottom", 12);
+        AddChild(margin);
 
-        _headerLabel = new Label();
-        root.AddChild(_headerLabel);
-        RefreshHeader();
+        var appRoot = new VBoxContainer
+        {
+            Name = "AppRoot",
+        };
+        appRoot.AddThemeConstantOverride("separation", 8);
+        margin.AddChild(appRoot);
 
-        _content = new VBoxContainer();
-        root.AddChild(_content);
-
-        root.AddChild(new HSeparator());
-
-        var statsHeader = new Label { Text = "현재 상태 (질적 표시)" };
-        root.AddChild(statsHeader);
-
-        _statsPanel = new VBoxContainer();
-        root.AddChild(_statsPanel);
-
-        _detailToggleButton = new Button { Text = "상세 정보 보기" };
-        _detailToggleButton.Pressed += ToggleDetailPanel;
-        root.AddChild(_detailToggleButton);
-
-        _detailPanel = new VBoxContainer { Visible = false };
-        root.AddChild(_detailPanel);
-
-        RenderStats();
+        BuildContextHeader(appRoot);
+        BuildMainScroll(appRoot);
+        BuildInfoTabs(appRoot);
+        BuildActionBar(appRoot);
     }
 
-    private void RefreshHeader()
+    private void BuildContextHeader(Container parent)
     {
-        _headerLabel.Text =
-            $"{_family.FamilyName} — {MultigenContent.FormatFamilyEra(_family.CurrentGeneration)} — {_family.CurrentCharacterName}";
+        _contextHeader = new VBoxContainer
+        {
+            Name = "ContextHeader",
+            SizeFlagsVertical = Control.SizeFlags.ShrinkBegin,
+        };
+        _contextHeader.AddThemeConstantOverride("separation", 2);
+
+        _contextHeaderLine1 = new Label
+        {
+            AutowrapMode = TextServer.AutowrapMode.Word,
+        };
+        _contextHeader.AddChild(_contextHeaderLine1);
+
+        _contextHeaderLine2 = new Label
+        {
+            AutowrapMode = TextServer.AutowrapMode.Word,
+        };
+        _contextHeader.AddChild(_contextHeaderLine2);
+
+        parent.AddChild(_contextHeader);
+        parent.AddChild(new HSeparator());
     }
 
-    private void ClearContent()
+    private void BuildMainScroll(Container parent)
     {
-        foreach (Node child in _content.GetChildren())
+        _mainScroll = new ScrollContainer
+        {
+            Name = "MainScroll",
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+            SizeFlagsVertical = Control.SizeFlags.ExpandFill,
+        };
+        parent.AddChild(_mainScroll);
+
+        _mainContent = new VBoxContainer
+        {
+            Name = "MainContent",
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+        };
+        _mainContent.AddThemeConstantOverride("separation", 6);
+        _mainScroll.AddChild(_mainContent);
+    }
+
+    private void BuildInfoTabs(Container parent)
+    {
+        _infoTabs = new TabContainer
+        {
+            Name = "InfoTabs",
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+            SizeFlagsVertical = Control.SizeFlags.ShrinkBegin,
+        };
+        _infoTabs.CustomMinimumSize = new Vector2(0, 180);
+
+        _stateTabContent = AddTabPage(_infoTabs, "StateTab", "상태");
+        _chronicleTabContent = AddTabPage(_infoTabs, "ChronicleTab", "연대기");
+        _familyHistoryTabContent = AddTabPage(_infoTabs, "FamilyHistoryTab", "가문사");
+
+        parent.AddChild(_infoTabs);
+    }
+
+    // 탭 노드 이름(영문)과 표시 라벨(한글)을 분리. 탭 내부에 ScrollContainer를 두어
+    // 작은 화면에서도 ActionBar를 밀어내지 않고 탭 내용을 스크롤할 수 있게 한다.
+    private static VBoxContainer AddTabPage(TabContainer tabs, string nodeName, string title)
+    {
+        var page = new ScrollContainer
+        {
+            Name = nodeName,
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+            SizeFlagsVertical = Control.SizeFlags.ExpandFill,
+        };
+
+        var inner = new VBoxContainer
+        {
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+        };
+        inner.AddThemeConstantOverride("separation", 4);
+        page.AddChild(inner);
+
+        tabs.AddChild(page);
+        tabs.SetTabTitle(tabs.GetTabCount() - 1, title);
+        return inner;
+    }
+
+    private void BuildActionBar(Container parent)
+    {
+        parent.AddChild(new HSeparator());
+
+        _actionBar = new VBoxContainer
+        {
+            Name = "ActionBar",
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+            SizeFlagsVertical = Control.SizeFlags.ShrinkEnd,
+        };
+        _actionBar.AddThemeConstantOverride("separation", 6);
+        parent.AddChild(_actionBar);
+    }
+
+    // -------------------------------------------------------------------------
+    // 영역 갱신 단일 진입점
+    // -------------------------------------------------------------------------
+
+    private void RefreshContextHeader(string stepLabel, string purposeLine)
+    {
+        _contextHeaderLine1.Text =
+            $"{_family.FamilyName} · {MultigenContent.FormatFamilyEra(_family.CurrentGeneration)} · {_family.CurrentCharacterName}";
+        _contextHeaderLine2.Text = $"[단계: {stepLabel}] {purposeLine}";
+    }
+
+    private void ClearMainContent()
+    {
+        foreach (Node child in _mainContent.GetChildren())
         {
             child.QueueFree();
         }
     }
 
-    private void RenderStats()
+    private void ResetMainScroll()
     {
-        foreach (Node child in _statsPanel.GetChildren())
+        _mainScroll.ScrollVertical = 0;
+        _mainScroll.ScrollHorizontal = 0;
+    }
+
+    private void SetActionBar(IEnumerable<Control> children)
+    {
+        foreach (Node child in _actionBar.GetChildren())
         {
             child.QueueFree();
         }
+        foreach (var c in children)
+        {
+            _actionBar.AddChild(c);
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // 탭 렌더링 (RenderInfoTabs 단일 진입점)
+    // -------------------------------------------------------------------------
+
+    private void RenderInfoTabs()
+    {
+        RenderStateTab();
+        RenderChronicleTab();
+        RenderFamilyHistoryTab();
+    }
+
+    private void RenderStateTab()
+    {
+        foreach (Node child in _stateTabContent.GetChildren())
+        {
+            child.QueueFree();
+        }
+
+        var heading = new Label { Text = "현재 상태 (질적 표시)" };
+        _stateTabContent.AddChild(heading);
 
         foreach (var definition in MvpLoopContent.StateDefinitions)
         {
             var value = _family.FamilyStats.TryGetValue(definition.Key, out var v) ? v : 0;
             var band = MultigenFlow.BuildStateBandLabel(definition.Key, value);
-            _statsPanel.AddChild(new Label
+            _stateTabContent.AddChild(new Label
             {
                 Text = $"{definition.Label}: {band}",
             });
         }
 
-        RenderDetailPanel();
-        RenderTraits();
+        var toggleButton = new Button
+        {
+            Text = _stateDetailVisible ? "상세 정보 숨기기" : "상세 정보 보기",
+            SizeFlagsHorizontal = Control.SizeFlags.ShrinkBegin,
+        };
+        toggleButton.Pressed += ToggleStateDetail;
+        _stateTabContent.AddChild(toggleButton);
+
+        if (_stateDetailVisible)
+        {
+            var detailHeader = new Label { Text = "[자리표시자: 추가 정보창]" };
+            _stateTabContent.AddChild(detailHeader);
+            foreach (var line in MultigenFlow.BuildDetailedStateLines(_family))
+            {
+                _stateTabContent.AddChild(new Label { Text = line });
+            }
+        }
+
+        _stateTabContent.AddChild(new HSeparator());
+
+        var traitsHeader = new Label { Text = "현재 인물 특성" };
+        _stateTabContent.AddChild(traitsHeader);
+
+        if (_family.CurrentCharacterTraits.Count == 0)
+        {
+            _stateTabContent.AddChild(new Label
+            {
+                Text = "[자리표시자: 특성 없음]",
+            });
+        }
+        else
+        {
+            var traitLine = new System.Text.StringBuilder();
+            for (int i = 0; i < _family.CurrentCharacterTraits.Count; i++)
+            {
+                if (i > 0) traitLine.Append(", ");
+                traitLine.Append(_family.CurrentCharacterTraits[i].Label);
+            }
+            _stateTabContent.AddChild(new Label { Text = traitLine.ToString() });
+        }
     }
 
-    private void RenderDetailPanel()
+    private void ToggleStateDetail()
     {
-        foreach (Node child in _detailPanel.GetChildren())
+        _stateDetailVisible = !_stateDetailVisible;
+        RenderStateTab();
+    }
+
+    private void RenderChronicleTab()
+    {
+        foreach (Node child in _chronicleTabContent.GetChildren())
         {
             child.QueueFree();
         }
 
-        _detailPanel.AddChild(new Label { Text = "[자리표시자: 추가 정보창]" });
-        foreach (var line in MultigenFlow.BuildDetailedStateLines(_family))
+        var heading = new Label
         {
-            _detailPanel.AddChild(new Label { Text = line });
-        }
-    }
+            Text = $"{MultigenContent.FormatFamilyEra(_family.CurrentGeneration)} 연대기",
+        };
+        _chronicleTabContent.AddChild(heading);
 
-    private void RenderTraits()
-    {
-        if (_family.CurrentCharacterTraits.Count == 0)
+        var chronicle = _family.CurrentRun.Chronicle;
+        if (chronicle.Count == 0)
         {
+            _chronicleTabContent.AddChild(new Label
+            {
+                Text = "[자리표시자: 아직 기록된 사건이 없습니다]",
+                AutowrapMode = TextServer.AutowrapMode.Word,
+            });
             return;
         }
 
-        var traitLine = new System.Text.StringBuilder();
-        traitLine.Append("특성: ");
-        for (int i = 0; i < _family.CurrentCharacterTraits.Count; i++)
+        for (int i = 0; i < chronicle.Count; i++)
         {
-            if (i > 0) traitLine.Append(", ");
-            traitLine.Append(_family.CurrentCharacterTraits[i].Label);
+            var entry = chronicle[i];
+            var prefix = (i == chronicle.Count - 1) ? "▶" : "·";
+            _chronicleTabContent.AddChild(new Label
+            {
+                Text = $"{prefix} ({entry.EventTitle}) {entry.RecordedLine}",
+                AutowrapMode = TextServer.AutowrapMode.Word,
+            });
         }
-        _statsPanel.AddChild(new Label { Text = traitLine.ToString() });
     }
 
-    private void ToggleDetailPanel()
+    private void RenderFamilyHistoryTab()
     {
-        _detailVisible = !_detailVisible;
-        _detailPanel.Visible = _detailVisible;
-        _detailToggleButton.Text = _detailVisible ? "상세 정보 숨기기" : "상세 정보 보기";
+        foreach (Node child in _familyHistoryTabContent.GetChildren())
+        {
+            child.QueueFree();
+        }
+
+        var heading = new Label { Text = "가문사" };
+        _familyHistoryTabContent.AddChild(heading);
+
+        // 유산 요약 (가문사 탭 상단으로 흡수).
+        _familyHistoryTabContent.AddChild(new Label { Text = "유산 요약" });
+        if (_family.CarriedOutcomeTags.Count == 0)
+        {
+            _familyHistoryTabContent.AddChild(new Label
+            {
+                Text = "[자리표시자: 아직 이어진 유산이 없습니다]",
+                AutowrapMode = TextServer.AutowrapMode.Word,
+            });
+        }
+        else
+        {
+            var joined = string.Join(", ", _family.CarriedOutcomeTags);
+            _familyHistoryTabContent.AddChild(new Label
+            {
+                Text = $"누적 큰 사건 결과 태그: {joined}",
+                AutowrapMode = TextServer.AutowrapMode.Word,
+            });
+        }
+
+        _familyHistoryTabContent.AddChild(new HSeparator());
+
+        // 끝난 세대 이력. History.Add는 AfterSummary에서만 일어나므로
+        // 세대 요약 화면 시점에는 현재 세대가 아직 포함되지 않는다(의도된 동작).
+        var historyHeading = new Label
+        {
+            Text = _family.IsExtinct ? "가문 전체 이력" : "지난 세대 이력",
+        };
+        _familyHistoryTabContent.AddChild(historyHeading);
+
+        if (_family.History.Count == 0)
+        {
+            _familyHistoryTabContent.AddChild(new Label
+            {
+                Text = "[자리표시자: 아직 끝난 세대가 없습니다]",
+                AutowrapMode = TextServer.AutowrapMode.Word,
+            });
+            return;
+        }
+
+        foreach (var rec in _family.History)
+        {
+            _familyHistoryTabContent.AddChild(new Label
+            {
+                Text = $"- {MultigenContent.FormatFamilyEra(rec.GenerationNumber)} {rec.CharacterName} ({rec.EndType})",
+                AutowrapMode = TextServer.AutowrapMode.Word,
+            });
+        }
     }
+
+    // -------------------------------------------------------------------------
+    // 화면 메서드 (각 단계)
+    // -------------------------------------------------------------------------
 
     private void ShowGenerationStart()
     {
-        RefreshHeader();
-        RenderStats();
-        ClearContent();
+        RefreshContextHeader("세대 시작", "[자리표시자: 화면 목적 — 새 세대를 시작합니다]");
+        ClearMainContent();
 
         var intro = MultigenContent.GetCharacterIntroLine(_family.CurrentCharacterName, _family.CurrentGeneration);
-        _content.AddChild(new Label
+        _mainContent.AddChild(new Label
         {
             Text = intro,
             AutowrapMode = TextServer.AutowrapMode.Word,
@@ -177,34 +442,44 @@ public partial class Main : Control
 
         var startButton = new Button { Text = "첫 사건으로 들어간다" };
         startButton.Pressed += ShowEvent;
-        _content.AddChild(startButton);
+        SetActionBar(new Control[] { startButton });
+
+        RenderInfoTabs();
+        ResetMainScroll();
     }
 
     private void ShowEvent()
     {
-        ClearContent();
+        RefreshContextHeader("사건 진행", "[자리표시자: 화면 목적 — 사건의 선택을 합니다]");
+        ClearMainContent();
 
         var run = _family.CurrentRun;
         var ev = MvpLoopContent.Events[run.CurrentEventIndex];
 
-        _content.AddChild(new Label
+        _mainContent.AddChild(new Label
         {
             Text = $"[{run.CurrentEventIndex + 1} / {MvpLoopContent.Events.Count}] {ev.Title}",
+            AutowrapMode = TextServer.AutowrapMode.Word,
         });
 
-        _content.AddChild(new Label
+        _mainContent.AddChild(new Label
         {
             Text = ev.Body,
             AutowrapMode = TextServer.AutowrapMode.Word,
         });
 
+        var choiceButtons = new List<Control>();
         foreach (var choice in ev.Choices)
         {
             var captured = choice;
             var button = new Button { Text = captured.Label };
             button.Pressed += () => ApplyChoice(captured);
-            _content.AddChild(button);
+            choiceButtons.Add(button);
         }
+        SetActionBar(choiceButtons);
+
+        RenderInfoTabs();
+        ResetMainScroll();
     }
 
     private void ApplyChoice(EventChoice choice)
@@ -213,15 +488,16 @@ public partial class Main : Control
         var ev = MvpLoopContent.Events[run.CurrentEventIndex];
         run.ApplyChoice(ev, choice, _family.FamilyStats);
         MultigenFlow.RecordOutcomeTag(_family, choice.OutcomeTag);
-        RenderStats();
         ShowResult(ev, choice);
     }
 
     private void ShowResult(LoopEvent ev, EventChoice choice)
     {
-        ClearContent();
+        _ = ev;
+        RefreshContextHeader("결과 확인", "[자리표시자: 화면 목적 — 선택의 결과를 확인합니다]");
+        ClearMainContent();
 
-        _content.AddChild(new Label
+        _mainContent.AddChild(new Label
         {
             Text = $"결과: {choice.ResultText}",
             AutowrapMode = TextServer.AutowrapMode.Word,
@@ -231,14 +507,14 @@ public partial class Main : Control
         {
             var label = MvpLoopContent.GetStateLabel(delta.Key);
             var sign = delta.Amount >= 0 ? "+" : string.Empty;
-            _content.AddChild(new Label
+            _mainContent.AddChild(new Label
             {
                 Text = $"{label} {sign}{delta.Amount}",
             });
         }
 
         var latest = _family.CurrentRun.Chronicle[^1];
-        _content.AddChild(new Label
+        _mainContent.AddChild(new Label
         {
             Text = $"연대기: {latest.RecordedLine}",
             AutowrapMode = TextServer.AutowrapMode.Word,
@@ -260,65 +536,52 @@ public partial class Main : Control
                 ShowGenerationSummary();
             }
         };
-        _content.AddChild(nextButton);
-    }
+        SetActionBar(new Control[] { nextButton });
 
-    private GenerationEndResult _pendingEnd = null!;
+        RenderInfoTabs();
+        ResetMainScroll();
+    }
 
     private void ShowGenerationSummary()
     {
-        ClearContent();
+        RefreshContextHeader("세대 요약", "[자리표시자: 화면 목적 — 세대를 마감합니다]");
+        ClearMainContent();
 
         var endResult = MultigenFlow.FinishCurrentGeneration(_family);
         _pendingEnd = endResult;
 
-        _content.AddChild(new Label
+        _mainContent.AddChild(new Label
         {
             Text = $"{_family.FamilyName} — {MultigenContent.FormatFamilyEra(_family.CurrentGeneration)} 세대 요약",
         });
 
-        _content.AddChild(new Label { Text = "누적 연대기 (이번 세대)" });
+        _mainContent.AddChild(new Label { Text = "이번 세대 누적 연대기" });
         foreach (var entry in _family.CurrentRun.Chronicle)
         {
-            _content.AddChild(new Label
+            _mainContent.AddChild(new Label
             {
                 Text = $"- ({entry.EventTitle}) {entry.RecordedLine}",
                 AutowrapMode = TextServer.AutowrapMode.Word,
             });
         }
 
-        _content.AddChild(new Label { Text = "후대 기록자의 요약" });
-        _content.AddChild(new Label
+        _mainContent.AddChild(new Label { Text = "후대 기록자의 요약" });
+        _mainContent.AddChild(new Label
         {
             Text = endResult.SummaryParagraph,
             AutowrapMode = TextServer.AutowrapMode.Word,
         });
-
-        if (_family.History.Count > 0)
-        {
-            _content.AddChild(new Label { Text = "지난 세대 이력" });
-            foreach (var rec in _family.History)
-            {
-                _content.AddChild(new Label
-                {
-                    Text = $"- {MultigenContent.FormatFamilyEra(rec.GenerationNumber)} {rec.CharacterName} ({rec.EndType})",
-                    AutowrapMode = TextServer.AutowrapMode.Word,
-                });
-            }
-        }
-
-        if (_family.CarriedOutcomeTags.Count > 0)
-        {
-            var joined = string.Join(", ", _family.CarriedOutcomeTags);
-            _content.AddChild(new Label { Text = $"누적 큰 사건 결과 태그: {joined}" });
-        }
 
         var nextButton = new Button
         {
             Text = endResult.IsExtinct ? "가문의 끝을 본다" : "후계를 본다",
         };
         nextButton.Pressed += AfterSummary;
-        _content.AddChild(nextButton);
+        SetActionBar(new Control[] { nextButton });
+
+        // 가문사 탭은 아직 현재 세대를 History에 포함하지 않는다(AfterSummary에서 추가).
+        RenderInfoTabs();
+        ResetMainScroll();
     }
 
     private void AfterSummary()
@@ -343,17 +606,19 @@ public partial class Main : Control
 
     private void ShowSuccession(GenerationEndResult endResult)
     {
-        ClearContent();
+        RefreshContextHeader("후계 선택", "[자리표시자: 화면 목적 — 다음 세대로 이어갈 후계를 정합니다]");
+        ClearMainContent();
 
-        _content.AddChild(new Label
+        _mainContent.AddChild(new Label
         {
             Text = $"{_family.FamilyName} — 후계 후보",
         });
 
+        var actionButtons = new List<Control>();
         foreach (var candidate in endResult.Candidates)
         {
             var captured = candidate;
-            _content.AddChild(new Label
+            _mainContent.AddChild(new Label
             {
                 Text = $"- {captured.Name}: {captured.Description}",
                 AutowrapMode = TextServer.AutowrapMode.Word,
@@ -368,54 +633,80 @@ public partial class Main : Control
                     if (i > 0) traitText.Append(", ");
                     traitText.Append(captured.Traits[i].Label);
                 }
-                _content.AddChild(new Label { Text = traitText.ToString() });
+                _mainContent.AddChild(new Label
+                {
+                    Text = traitText.ToString(),
+                    AutowrapMode = TextServer.AutowrapMode.Word,
+                });
             }
 
             var pickButton = new Button
             {
                 Text = endResult.Candidates.Count == 1
-                    ? $"{captured.Name}로 다음 세대로 진입"
+                    ? $"{captured.Name}(으)로 다음 세대 진입"
                     : $"{captured.Name}을(를) 후계로 삼는다",
             };
             pickButton.Pressed += () => OnSuccessionPicked(captured);
-            _content.AddChild(pickButton);
+            actionButtons.Add(pickButton);
         }
+        SetActionBar(actionButtons);
+
+        RenderInfoTabs();
+        ResetMainScroll();
     }
 
     private void OnSuccessionPicked(SuccessionCandidate chosen)
     {
         var nextRun = MultigenFlow.BuildNextGenerationRun(_family, chosen);
         MultigenFlow.AdvanceToNextGeneration(_family, chosen, nextRun);
-        _pendingEnd = null;
+        _pendingEnd = null!;
         ShowGenerationStart();
     }
 
     private void ShowExtinction(GenerationEndResult endResult)
     {
-        ClearContent();
         _family.MarkExtinct();
 
-        _content.AddChild(new Label
+        RefreshContextHeader("멸문", "[자리표시자: 화면 목적 — 가문이 끝났습니다]");
+        ClearMainContent();
+
+        _mainContent.AddChild(new Label
         {
             Text = $"{_family.FamilyName} — 가문 멸문",
         });
 
-        _content.AddChild(new Label
+        _mainContent.AddChild(new Label
         {
             Text = endResult.SummaryParagraph,
             AutowrapMode = TextServer.AutowrapMode.Word,
         });
 
-        _content.AddChild(new Label { Text = "가문 전체 이력" });
+        _mainContent.AddChild(new Label { Text = "가문 전체 이력" });
         foreach (var rec in _family.History)
         {
-            _content.AddChild(new Label
+            _mainContent.AddChild(new Label
             {
                 Text = $"- {MultigenContent.FormatFamilyEra(rec.GenerationNumber)} {rec.CharacterName} ({rec.EndType})",
                 AutowrapMode = TextServer.AutowrapMode.Word,
             });
         }
+
+        // 멸문 화면 ActionBar에는 진행 버튼을 두지 않고 비활성 안내만 둔다.
+        var endNotice = new Label
+        {
+            Text = "[자리표시자: 가문이 멸문하여 더 이상 진행할 수 없습니다]",
+            AutowrapMode = TextServer.AutowrapMode.Word,
+        };
+        endNotice.Modulate = new Color(1f, 1f, 1f, 0.6f);
+        SetActionBar(new Control[] { endNotice });
+
+        RenderInfoTabs();
+        ResetMainScroll();
     }
+
+    // -------------------------------------------------------------------------
+    // --smoke 경로 (UI 노드를 만들지 않음 — 합류 계약 유지)
+    // -------------------------------------------------------------------------
 
     // MVP 검증용 임시 자동 스모크. 통합 테스트 체계 도입 시 제거 대상.
     // 경로 A: 1세대(NaturalDeath, 후계 있음) → 2세대 진입 → 2세대(Extinction) → SMOKE_OK.
