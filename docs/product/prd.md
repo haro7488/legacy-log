@@ -1,6 +1,6 @@
 # LegacyLog PRD
 
-> 최종 수정: 2026-05-19
+> 최종 수정: 2026-05-22
 > 상태: 초안 - 다세대 게임 정체, MVP 범위, 중세 판타지 귀족가문 방향, Vertical Slice 1 검증 방향 확정
 
 ## 1. 제품 목표
@@ -174,7 +174,7 @@ MVP는 다세대 진행이 작동하는 최소 형태가 다음 조건을 만족
 
 ## 8. MVP 이후 재미 검증 빌드
 
-MVP 이후 첫 확장 검증 빌드는 **Vertical Slice 1: 중세 판타지 귀족가문 반복 플레이 재미 검증 빌드**로 둔다. 큰 범위는 `docs/decisions/014-vertical-slice-1-playtest-scope.md`, 콘텐츠·작위·UI 검증 기준은 `docs/decisions/015-vertical-slice-1-gameplay-content-and-validation.md`를 따른다.
+MVP 이후 첫 확장 검증 빌드는 **Vertical Slice 1: 중세 판타지 귀족가문 반복 플레이 재미 검증 빌드**로 둔다. 큰 범위는 `docs/decisions/014-vertical-slice-1-playtest-scope.md`, 콘텐츠·작위·UI 검증 기준은 `docs/decisions/015-vertical-slice-1-gameplay-content-and-validation.md`, UI 배치 방향은 `docs/product/vertical-slice-1-ui-layout-direction.md`를 따른다.
 
 이 빌드의 목적은 완성형 시스템 구현이 아니라, 여러 번 반복 플레이하면서 작위, 상태, 사건, 세대 간 유산이 유기적으로 재미를 만드는지 확인하는 것이다.
 
@@ -190,6 +190,9 @@ Vertical Slice 1의 제품 방향은 다음을 기본으로 한다.
 - 이벤트는 작위, 상태, 이전 큰 사건 태그에 따라 조건부로 등장할 수 있어야 한다.
 - 선택 결과는 즉시 상태 변화, 연대기 기록, 유산 태그, 다음 세대 시작 조건 중 하나 이상에 의미 있게 남아야 한다.
 - UI/UX는 기능 검증의 보조가 아니라 반복 플레이 재미 검증의 핵심 조건으로 본다.
+- UI는 상단 헤더, 중간 단일 게임 화면, 하단 탭 메뉴의 3단 구조를 기본 방향으로 둔다.
+- 하단 탭은 `사건`, `상태`, `연대기`, `가문사`를 전환하며, 선택된 탭의 내용은 중간 화면 전체를 사용한다.
+- 사건 선택지와 주요 진행 버튼은 별도 하단 ActionBar가 아니라 사건/결과/요약 화면 내부의 주요 행동 영역으로 배치하는 방향을 우선 검토한다.
 
 Vertical Slice 1은 다음 콘텐츠·검증 기준을 따른다.
 

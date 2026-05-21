@@ -1,177 +1,105 @@
 # Current Focus
 
-> 최종 수정: 2026-05-19
+> 최종 수정: 2026-05-22
 
 ## 현재 초점
 
-현재 초점은 **Vertical Slice 1 구현 위임 전 기획 기준 정리**이다.
+현재 초점은 **Vertical Slice 1 UI 레이아웃 개선 handoff 완료 확인**이다.
 
-다세대 MVP 기능과 UI/UX 개선은 하위 handoff 기준으로 구현 완료 보고됐다. 다음 구현은 MVP 자체가 아니라, 작위·이벤트·상태·세대 간 유산이 실제 재미를 만드는지 여러 번 플레이하며 검증하는 빌드다.
+Vertical Slice 1 플레이테스트 빌드는 하위 handoff 기준으로 구현 완료 및 수동 검증 완료 상태로 보고됐다. 이어서 진행한 UI 레이아웃 개선도 `vertical-slice-1-ui-layout-improvement` handoff 기준으로 구현, 자동 검증, 사용자 수동 UI 확인이 완료된 상태로 보고됐다.
 
-구현으로 바로 넘어가기 전에, 검증 빌드의 콘텐츠 기준, 작위 변화, 세대 간 유산, 후계자 차이, UI/UX 검증 기준을 충분히 정리한다.
+Root Codex는 이번 작업을 직접 구현하지 않는다. 현재 역할은 하위 handoff 결과를 제품 기준으로 회수하고, 다음 판단 항목을 정리하는 것이다.
 
 ## 참조 문서
 
 - `AGENTS.md`
 - `docs/product/prd.md`
-- `docs/product/vertical-slice-1-event-list.md`
-- `docs/product/vertical-slice-1-event-copy-draft.md`
-- `docs/product/vertical-slice-1-event-chronicle-draft.md`
-- `docs/product/vertical-slice-1-legacy-tag-rules.md`
-- `docs/product/vertical-slice-1-title-progression-rules.md`
-- `docs/product/vertical-slice-1-generation-event-flow.md`
-- `docs/product/vertical-slice-1-event-tag-change-table.md`
-- `docs/product/vertical-slice-1-generation-start-and-tag-display.md`
-- `docs/product/vertical-slice-1-generation-summary-templates.md`
+- `docs/product/vertical-slice-1-ui-layout-direction.md`
+- `docs/product/vertical-slice-1-ui-layout-project-codex-prompt.md`
 - `docs/product/vertical-slice-1-manual-playtest-guide.md`
-- `docs/product/vertical-slice-1-project-codex-implementation-prompt.md`
 - `docs/decisions/002-agent-workflow.md`
-- `docs/decisions/007-multigen-game-identity.md`
-- `docs/decisions/008-multigen-mvp-scope.md`
-- `docs/decisions/009-chronicle-style.md`
-- `docs/decisions/010-state-display-layering.md`
 - `docs/decisions/011-ui-ux-validation-workflow.md`
 - `docs/decisions/012-responsive-tabbed-ui-direction.md`
-- `docs/decisions/013-medieval-fantasy-noble-house-direction.md`
 - `docs/decisions/014-vertical-slice-1-playtest-scope.md`
 - `docs/decisions/015-vertical-slice-1-gameplay-content-and-validation.md`
-- `legacy-log-project/docs/handoff/multigen-mvp/05-root-status-summary.md`
-- `legacy-log-project/docs/handoff/multigen-ui-ux-improvement/05-root-status-summary.md`
+- `docs/decisions/016-root-planning-project-implementation-boundary.md`
+- `legacy-log-project/docs/handoff/vertical-slice-1-playtest-build/05-root-status-summary.md`
+- `legacy-log-project/docs/handoff/vertical-slice-1-playtest-build/06-manual-playtest-results.md`
+- `legacy-log-project/docs/handoff/vertical-slice-1-ui-layout-improvement/05-root-status-summary.md`
+- `legacy-log-project/docs/handoff/vertical-slice-1-ui-layout-improvement/06-manual-playtest-results.md`
 
 ## 현재 상태 판단
 
-- 단일 세대 첫 루프 모듈은 동작 검증 완료로 본다.
-- 다세대 MVP 기능 구현은 하위 handoff 기준으로 완료 보고됐다.
-- 다세대 MVP UI/UX 편의성 개선도 하위 handoff 기준으로 완료 보고됐다.
-- 중세 판타지 귀족가문 방향과 작위 체계는 `013`에서 확정됐다.
-- 다음 검증은 기능 존재 여부보다 반복 플레이에서 서로 다른 가문사가 만들어지는지, 그리고 UI/UX가 그 판단을 돕는지에 초점을 둔다.
-- 이벤트 분량, 작위 상승/상실, 유산 태그, 후계자 차이, 세대 시작 정보 구조, UI 우선순위, 피드백 기록 형식은 `015`에서 1차 확정됐다.
-- Vertical Slice 1 사건 목록 46개 초안은 `docs/product/vertical-slice-1-event-list.md`에 작성됐다.
-- Vertical Slice 1 사건별 본문과 선택지 표시 문구 초안은 `docs/product/vertical-slice-1-event-copy-draft.md`에 작성됐다.
-- Vertical Slice 1 사건별 큰 사건/보조 사건 구분과 대표 연대기 문장 초안은 `docs/product/vertical-slice-1-event-chronicle-draft.md`에 작성됐다.
-- 선택지별 고유 연대기 문장 확장은 플레이테스트 후 필요성이 확인되면 진행하는 것으로 `docs/product/vertical-slice-1-event-chronicle-draft.md`에 정리됐다.
-- Vertical Slice 1 유산 태그 지속 기간, 상반 태그 교체, UI 노출 기준은 `docs/product/vertical-slice-1-legacy-tag-rules.md`에 작성됐다.
-- Vertical Slice 1 작위 상승/상실 조건, 작위 위험 단계, 관련 사건 연결 기준은 `docs/product/vertical-slice-1-title-progression-rules.md`에 작성됐다.
-- Vertical Slice 1 세대별 사건 수, 사건 흐름, 사건 풀 선택 기준은 `docs/product/vertical-slice-1-generation-event-flow.md`에 작성됐다.
-- Vertical Slice 1 사건별 유산 태그 추가/해소/교체 기준은 `docs/product/vertical-slice-1-event-tag-change-table.md`에 작성됐다.
-- Vertical Slice 1 세대 시작 화면의 태그 노출 개수, 우선순위, 태그별 문장 템플릿은 `docs/product/vertical-slice-1-generation-start-and-tag-display.md`에 작성됐다.
-- Vertical Slice 1 세대 요약의 정보 구조, 종결 유형별 요약 방향, 예시 템플릿은 `docs/product/vertical-slice-1-generation-summary-templates.md`에 작성됐다.
-- Vertical Slice 1 수동 플레이테스트 기록 양식, UI/UX 체크리스트, 사용자 피드백 요청 문구는 `docs/product/vertical-slice-1-manual-playtest-guide.md`에 작성됐다.
-- Project Codex로 넘길 Vertical Slice 1 구현 계획 수립 프롬프트 초안은 `docs/product/vertical-slice-1-project-codex-implementation-prompt.md`에 작성됐다.
-- 현재 기준으로 Root 기획 문서만 보면 Project Codex에 구현 계획 수립을 위임할 수 있는 상태다.
-- 현재 작업트리에는 루트 기획 문서 변경과 하위 구현 변경이 함께 남아 있을 수 있으므로, 커밋/검토 시 범위를 분리해 다룬다.
+- Vertical Slice 1 플레이테스트 빌드는 `vertical-slice-1-playtest-build` handoff 기준 완료로 본다.
+- Vertical Slice 1 UI 레이아웃 개선은 `vertical-slice-1-ui-layout-improvement` handoff 기준 완료로 본다.
+- UI 레이아웃 개선은 상단 헤더, 중간 단일 게임 화면, 하단 탭 메뉴 3단 구조를 구현한 것으로 보고됐다.
+- 하단 탭은 `사건`, `상태`, `연대기`, `가문사`를 주 화면 전환 메뉴로 사용한다.
+- 사건 선택지와 진행 버튼은 별도 하단 ActionBar가 아니라 사건 화면 내부 행동 영역으로 이동한 것으로 보고됐다.
+- 자동 검증은 현재 파일 기준 재확인했다.
+- 사용자 수동 UI 확인도 handoff에 완료로 기록됐다.
+- 현재 Root 기준으로 구현을 막는 추가 확인 사항은 없다.
 
-## 확정된 검증 빌드 방향
+## 검증 결과
 
-- 다음 빌드는 **Vertical Slice 1: 중세 판타지 귀족가문 반복 플레이 재미 검증 빌드**다.
-- 한 실행은 대략 10~20분 플레이를 목표로 한다.
-- 보통 4~8세대 안에서 상승, 정체, 쇠락, 멸문 가능성이 체감되어야 한다.
-- 작위는 남작, 자작, 백작, 후작, 공작까지 실제 플레이 영향이 있어야 한다.
-- 왕과 황제는 최종 목표나 세계관 압력으로 암시할 수 있으나, 실제 통치 시스템은 보류한다.
-- 핵심 상태 후보는 재산, 명예, 궁정 영향력, 가문 결속이다.
-- 이벤트는 최소 40개, 가능하면 60개 내외를 목표로 한다.
-- 이벤트 분류별 최소 기준은 총 46개다.
-- 이벤트는 작위, 상태, 이전 큰 사건 태그에 따라 조건부로 등장할 수 있어야 한다.
-- 선택 결과는 즉시 상태 변화, 연대기 기록, 유산 태그, 다음 세대 시작 조건 중 하나 이상에 의미 있게 남아야 한다.
+현재 파일 기준 Root Codex가 재확인한 자동 검증:
 
-## 확정된 콘텐츠/작위 기준
+- `dotnet build`: 성공, 경고 0개, 오류 0개
+- `.\scripts\godot.cmd --headless --import`: 성공
+- `.\scripts\godot.cmd --headless -- --smoke`: 성공, `SMOKE_OK`
 
-- 이벤트 최소 구성은 영지/재산 8개, 명예/전쟁/기사도 8개, 궁정/정치 8개, 가문 내부/후계 8개, 작위 상승/청원/포상 5개, 작위 상실/위기/반역 의심 5개, 세대 종결 변형 4개다.
-- 작위 상승은 자동 승급이 아니라 조건 충족 후 등장하는 승격 기회 이벤트로 처리한다.
-- 승격은 선택이며, 재산 소모, 결속 하락, 정적 증가, 명예 손상 가능성, 위험 태그 같은 비용을 동반한다.
-- 작위 상실은 대표작위 상실, 하위 작위만 유지, 영지 상실, 유지 비용 증가, 후계 권리 약화, 멸문 위험 증가 같은 쇠락 단계로 표현한다.
-- 유산 태그는 왕권/궁정, 명예/불명예, 영지/재산, 가문 내부/후계, 작위/정치적 입지, 비극/몰락 계열로 시작한다.
-- 큰 사건은 0~2개, 작은 사건은 0~1개의 유산 태그를 남길 수 있다.
-- 후계자는 성향, 강점, 약점을 가지며, 사건 등장 조건과 선택 결과에 약하게 영향을 준다.
-- 후계자 특성은 성공/실패를 단독 결정하지 않는다.
+handoff 기준 수동 확인:
 
-## 세대 시작/UI 기준
+- 확인 주체: 사용자
+- 확인 결과: UI/UX 수동 검증 완료
+- 상세 창 크기별 기록, 스크린샷, 체크 테이블은 제공되지 않았다.
 
-- 세대 시작 화면은 이전 세대 결과와 이번 세대 조건을 연결하는 화면이다.
-- 목표는 다음 세대가 왜 이 상태에서 시작하는지 10초 안에 이해시키는 것이다.
-- 기본 구성은 가문 헤더, 이전 세대의 유산, 이번 세대의 출발 상태, 후계자 소개, 이번 세대의 압력 또는 예고다.
-- 항상 보이는 정보는 가문명, 대표작위, 세대, 현재 인물, 현재 단계로 제한한다.
-- 사건 화면은 사건 분류, 관련 상태, 관련 작위 위험, 관련 유산 태그를 보여줘야 한다.
-- 선택지는 짧은 행동명과 영향 요약으로 구성한다.
-- 결과 화면은 결과 문장, 상태 변화 요약, 태그 변화, 작위 변화/위험 변화, 연대기 기록, 다음 행동 순서로 보여준다.
-- 정확한 숫자, 전체 태그 목록, 작위 조건 상세는 보조 영역에 둔다.
+## 남은 제약
 
-## UI/UX 검증 기준
+- 최종 UI/아트 스타일은 확정하지 않았다.
+- 탭 라벨 축약은 현재 보류 상태다.
+- 멸문 직후 자동으로 `가문사` 탭으로 이동하지 않는다.
+- 상태 상세 접기/펼치기 시 스크롤 위치 보존은 구현하지 않았다.
+- smoke는 UI 겹침, 잘림, 가독성을 자동 검증하지 않는다.
+- 상세 회차별 수동 플레이테스트 기록은 제공되지 않았다.
 
-Vertical Slice 1에서는 UI/UX를 기능 검증의 보조로 보지 않는다. 반복 플레이 재미를 판단하기 위한 핵심 검증 대상이다.
+## Root Codex 판단 필요 사항
 
-사용자는 반복 플레이 중 다음 정보를 불편 없이 확인할 수 있어야 한다.
+현재 구현 완료를 막는 Root 확인 필요 사항은 없다.
 
-- 현재 가문
-- 대표작위
-- 세대
-- 현재 인물
-- 현재 단계와 화면 목적
-- 핵심 상태의 질적 구간과 변화 방향
-- 사건 선택이 영향을 주는 상태와 작위 위험
-- 선택 결과가 연대기와 유산 태그에 남은 방식
-- 이전 세대 결과가 다음 세대에 이어진 지점
-- 작위 상승, 작위 상실, 쇠락, 멸문 위험의 이유
-- 실행 종료 후 전체 가문사의 궤적
+후속 판단 후보는 다음이다.
 
-UI는 작은 창과 세로형 화면에서도 반복 플레이가 가능한 구조여야 한다. 항상 보이는 핵심 정보와 탭/보조 영역에서 확인하는 상세 정보를 구분한다.
+1. 실제 반복 플레이 중 `360x640`에서 하단 탭 라벨이 잘리면 탭 라벨 축약을 허용할지 판단한다.
+2. 멸문 화면에서 사용자가 다음 확인 위치를 이해하지 못하면 가문사 탭 안내 문구를 추가할지 판단한다.
+3. 멸문 직후 자동으로 가문사 탭으로 이동하는 흐름을 허용할지 판단한다.
+4. 헤더가 작은 창에서 과도하게 길면 헤더 정보 일부를 줄이거나 접을지 판단한다.
+5. 상태 상세 접기/펼치기 후 스크롤 리셋이 불편하면 별도 UX 개선으로 분리할지 판단한다.
 
-## 재미 검증 질문
+## 다음 작업 후보
 
-- 3회 이상 플레이했을 때 서로 다른 가문사가 나왔는가?
-- 작위 상승을 노리는 선택과 안정적으로 버티는 선택이 갈렸는가?
-- 높은 작위가 보상뿐 아니라 부담으로도 느껴졌는가?
-- 이전 세대 선택의 흔적이 다음 세대에 보였는가?
-- 네 핵심 상태가 서로 다른 고민을 만들었는가?
-- 멸문 또는 쇠락이 납득 가능한 결과로 보였는가?
-- UI가 반복 플레이 중 판단을 돕고, 정보 확인을 방해하지 않았는가?
-- 다시 플레이해서 다른 전략을 해보고 싶은가?
-
-## 다음 기획 질문
-
-- 구현 계획 수립 중 Project Codex가 발견한 기획 공백이나 모순을 Root Codex로 되돌릴 것인가?
+1. 이번 UI 레이아웃 개선 작업을 커밋 단위로 정리한다.
+2. 반복 플레이 중 발견되는 UI 문제만 작은 후속 작업으로 분리한다.
+3. UI 문제가 없으면 Vertical Slice 1의 다음 제품 판단은 분기 사건 조건, 상태 구간/이월, 세대 요약 문체, 후계자 특성 가중치 중 하나로 이동한다.
 
 ## 제외 범위
 
-- 구현 파일 수정
-- 하위 프로젝트 내부 문서 수정
-- 왕/황제 실제 통치 시스템
-- 완성형 혼인 시스템
-- 혈통 트리
-- 저장/불러오기
-- 정교한 경제 시스템
-- 정교한 전쟁 시스템
-- AI 귀족 세력 시뮬레이션
-- 지역 지도
-- 최종 문체 확정
+- Root Codex의 구현 파일 수정
+- 하위 프로젝트 내부 handoff 문서 직접 수정
+- 새 사건 추가
+- 사건 본문 재작성
+- 작위 체계 변경
+- 유산 태그 체계 변경
+- 데이터 파일 형식, 로딩 구조, Godot 노드 구조 확정
 - 최종 UI/아트 스타일 확정
-- 데이터 파일 형식과 로딩 구조 결정
-
-## Root Codex 완료 기준
-
-- Vertical Slice 1 범위를 결정문서와 PRD에 반영한다.
-- Vertical Slice 1 사건 목록 46개 초안을 작성한다.
-- Vertical Slice 1 사건별 본문과 선택지 표시 문구 초안을 작성한다.
-- Vertical Slice 1 사건별 큰 사건/보조 사건 구분과 대표 연대기 문장 초안을 작성한다.
-- 선택지별 고유 연대기 문장 확장 여부를 정리한다.
-- Vertical Slice 1 유산 태그 지속 기간과 상반 태그 교체 기준을 작성한다.
-- Vertical Slice 1 작위 상승/상실 조건과 작위 위험 단계 기준을 작성한다.
-- Vertical Slice 1 세대별 사건 수와 사건 풀 선택 기준을 작성한다.
-- Vertical Slice 1 사건별 유산 태그 추가/해소/교체 기준을 작성한다.
-- Vertical Slice 1 세대 시작 화면의 태그 노출 개수와 태그별 문장 템플릿을 작성한다.
-- Vertical Slice 1 세대 요약 정보 구조와 예시 템플릿을 작성한다.
-- Vertical Slice 1 수동 플레이테스트 기록 양식과 UI/UX 체크리스트를 작성한다.
-- Project Codex 구현 계획 수립 위임 프롬프트 초안을 작성한다.
-- UI/UX 검증 기준을 기능 검증과 같은 중요도로 문서화한다.
-- 다음 구현 위임 전 Root가 더 정해야 할 기획 질문과 Project로 넘길 기술 질문을 분리한다.
-- 하위 구현 흐름으로 넘길 때 포함해야 할 제품 요구와 제외 범위를 명확히 한다.
+- 저장/불러오기, 혼인, 혈통 트리, 정교한 경제/전쟁/AI 시뮬레이션
 
 ## 보고 형식
 
 Root Codex는 다음 형식으로 결과를 돌려준다.
 
-- 새로 확정된 검증 빌드 범위
-- PRD 변경 요약
-- 추가된 결정문서 요약
-- UI/UX 검증 기준
-- 아직 미정인 기획 질문
+- 구현 완료 여부
+- 제품 완료 기준 충족 여부
+- 검증 결과
+- 수동 확인 여부
+- 남은 제약
+- Root Codex가 판단해야 할 사항
+- 다음 작업 후보
